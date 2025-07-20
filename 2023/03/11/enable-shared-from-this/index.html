@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"flat"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="enable_shared_from_this允许一个对象从this指针获取另外一个shared_ptr对象，当然这个对象必须被一个shared_ptr管理。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="enable_shared_from_this">
+<meta property="og:url" content="http://example.com/2023/03/11/enable-shared-from-this/index.html">
+<meta property="og:site_name" content="Gboom">
+<meta property="og:description" content="enable_shared_from_this允许一个对象从this指针获取另外一个shared_ptr对象，当然这个对象必须被一个shared_ptr管理。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2023/03/11/enable-shared-from-this/20210402112907460.png">
+<meta property="article:published_time" content="2023-03-11T10:54:28.000Z">
+<meta property="article:modified_time" content="2023-05-13T14:17:18.967Z">
+<meta property="article:author" content="Gboom">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="STL">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2023/03/11/enable-shared-from-this/20210402112907460.png">
+
+<link rel="canonical" href="http://example.com/2023/03/11/enable-shared-from-this/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>enable_shared_from_this | Gboom</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Gboom</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">个人博客</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/03/11/enable-shared-from-this/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Gboom">
+      <meta itemprop="description" content="日常记录一些东西">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Gboom">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          enable_shared_from_this
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2023-03-11 18:54:28" itemprop="dateCreated datePublished" datetime="2023-03-11T18:54:28+08:00">2023-03-11</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2023-05-13 22:17:18" itemprop="dateModified" datetime="2023-05-13T22:17:18+08:00">2023-05-13</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/STL/" itemprop="url" rel="index"><span itemprop="name">STL</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>enable_shared_from_this允许一个对象从this指针获取另外一个shared_ptr对象，当然这个对象必须被一个shared_ptr管理。</p>
+<span id="more"></span>
+
+<h3 id="场景"><a href="#场景" class="headerlink" title="场景"></a>场景</h3><p>主要场合是在回调函数中，例如以下代码，Factory负责创建一些对象，这些对像在退出时对调用Factory的do_some_wor()函数。因此Factor的生命周期应该长于T，为了这个目的，T应该保存一个shared_ptr<Factory>的变量。</Factory></p>
+<p><img src="20210402112907460.png" alt="20210402112907460"></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Factory</span> : <span class="keyword">public</span> enable_shared_from_this&lt;Factory&gt;&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	<span class="function">T <span class="title">create_some_objiect</span><span class="params">()</span> </span>&#123;</span><br><span class="line">     	<span class="keyword">return</span> <span class="built_in">T</span>([factory = <span class="built_in">shared_from_this</span>()]()&#123;</span><br><span class="line">            factory.<span class="built_in">do_some_work</span>();</span><br><span class="line">        &#125;); </span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h3 id="源码"><a href="#源码" class="headerlink" title="源码"></a>源码</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// shared_ptr.h</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> _Tp&gt;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">enable_shared_from_this</span></span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">protected</span>:</span><br><span class="line">  <span class="function"><span class="keyword">constexpr</span> <span class="title">enable_shared_from_this</span><span class="params">()</span> <span class="keyword">noexcept</span> </span>&#123; &#125;</span><br><span class="line">  <span class="built_in">enable_shared_from_this</span>(<span class="type">const</span> enable_shared_from_this&amp;) <span class="keyword">noexcept</span> &#123; &#125;</span><br><span class="line">  enable_shared_from_this&amp;</span><br><span class="line">  <span class="keyword">operator</span>=(<span class="type">const</span> enable_shared_from_this&amp;) <span class="keyword">noexcept</span></span><br><span class="line">  &#123; <span class="keyword">return</span> *<span class="keyword">this</span>; &#125;</span><br><span class="line">  ~<span class="built_in">enable_shared_from_this</span>() &#123; &#125;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">  <span class="function">shared_ptr&lt;_Tp&gt;</span></span><br><span class="line"><span class="function">  <span class="title">shared_from_this</span><span class="params">()</span></span></span><br><span class="line"><span class="function">  </span>&#123; <span class="keyword">return</span> <span class="built_in">shared_ptr</span>&lt;_Tp&gt;(<span class="keyword">this</span>-&gt;_M_weak_this); &#125;</span><br><span class="line">  <span class="function">shared_ptr&lt;<span class="type">const</span> _Tp&gt;</span></span><br><span class="line"><span class="function">  <span class="title">shared_from_this</span><span class="params">()</span> <span class="type">const</span></span></span><br><span class="line"><span class="function">  </span>&#123; <span class="keyword">return</span> <span class="built_in">shared_ptr</span>&lt;<span class="type">const</span> _Tp&gt;(<span class="keyword">this</span>-&gt;_M_weak_this); &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">  <span class="keyword">template</span>&lt;<span class="keyword">typename</span> _Tp1&gt;</span><br><span class="line">  <span class="type">void</span></span><br><span class="line">  _M_weak_assign(_Tp1* __p, <span class="type">const</span> __shared_count&lt;&gt;&amp; __n) <span class="type">const</span> <span class="keyword">noexcept</span></span><br><span class="line">  &#123; _M_weak_this._M_assign(__p, __n); &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Found by ADL when this is an associated class.</span></span><br><span class="line">  <span class="keyword">friend</span> <span class="type">const</span> enable_shared_from_this*</span><br><span class="line">  __enable_shared_from_this_base(<span class="type">const</span> __shared_count&lt;&gt;&amp;,</span><br><span class="line">  <span class="type">const</span> enable_shared_from_this* __p)</span><br><span class="line">  &#123; <span class="keyword">return</span> __p; &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">template</span>&lt;<span class="keyword">typename</span>, _Lock_policy&gt;</span><br><span class="line">  <span class="keyword">friend</span> <span class="keyword">class</span> <span class="title class_">__shared_ptr</span>;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">mutable</span> weak_ptr&lt;_Tp&gt;  _M_weak_this;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>上述代码来自gcc，可以看到enable_shared_from_this类通过weak_ptr&lt;_Tp&gt;管理对象。但是奇怪的是，构造函数并没有对<code>_M_weak_this</code>进行赋值。<code>_M_weak_this</code>的构造实在shared_ptr对象构造时赋值的。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// shared_ptr_base.h</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">__shared_ptr</span>&#123;</span><br><span class="line">    __shared_ptr(_Yp* __p) &#123;</span><br><span class="line">        _M_enable_shared_from_this_with(__p);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 继承了enable_shared_from_this</span></span><br><span class="line">    _M_enable_shared_from_this_with(_Yp* __p) <span class="keyword">noexcept</span></span><br><span class="line">	&#123;</span><br><span class="line">	  <span class="keyword">if</span> (<span class="keyword">auto</span> __base = __enable_shared_from_this_base(_M_refcount, __p))</span><br><span class="line">	    __base-&gt;_M_weak_assign(<span class="built_in">const_cast</span>&lt;_Yp2*&gt;(__p), _M_refcount);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 如果没有继承enable_shared_from_this</span></span><br><span class="line">	_M_enable_shared_from_this_with(_Yp*) <span class="keyword">noexcept</span></span><br><span class="line">	&#123; &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>在shared_ptr构造时，会调用<code>_M_enable_shared_from_this_with</code>，如果对象继承了<code>enable_shared_from_this</code>那么会调用<code>__enable_shared_from_this_base</code>和<code>_M_weak_assign</code>创建_M_weak_this。值得注意的是，shared_ptr_base.h 中定义了一个__enable_shared_from_this，这个类与enable_share_from_this除了名字外几乎一模一样。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>​	enable_shared_from_this的构造函数没有赋值<code>_M_weak_this</code>。原因主要为，如果是一个栈对象，enable_shared_from_this是不适用的。只有当该对象被一个shared_ptr管理时，在创建share_ptr对象时，赋值<code>_M_weak_this</code>。</p>
+<h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><ul>
+<li><code>_M_weak_this</code>为什么要用cosnt修饰？</li>
+<li>__enable_shared_from_this_base为什么要声明为friend，明明没有访问到enable_shared_from_this的私有成员？</li>
+<li>_M_enable_shared_from_this_with 调用__enable_shared_from_this_base时，发生了<code>__p</code>类型从<code>_Yp*</code>到<code>enable_shared_from_this*</code>的隐式转换，这是如何实现的？</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/C/" rel="tag"># C++</a>
+              <a href="/tags/STL/" rel="tag"># STL</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/2023/03/13/CUDA%E7%BA%BF%E7%A8%8B%E7%BB%84%E7%BB%87/" rel="next" title="初识CUDA编程">
+      初识CUDA编程 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%BA%E6%99%AF"><span class="nav-number">1.</span> <span class="nav-text">场景</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BA%90%E7%A0%81"><span class="nav-number">2.</span> <span class="nav-text">源码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%97%AE%E9%A2%98"><span class="nav-number">4.</span> <span class="nav-text">问题</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Gboom"
+      src="/images/avatar.gif">
+  <p class="site-author-name" itemprop="name">Gboom</p>
+  <div class="site-description" itemprop="description">日常记录一些东西</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">6</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Gboom</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+</body>
+</html>
